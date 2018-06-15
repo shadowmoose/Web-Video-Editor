@@ -22,6 +22,7 @@ canvas{
     position: absolute;
     top:0;
     left:0;
+    border: 0;
 }
 
 #resizable {
@@ -52,10 +53,15 @@ canvas{
 
 .slider_time_pos{
     position: absolute;
-    width: 1px;
+    width: 4px;
     background: red;
     height: 100%;
     top: 0;
     left: 20%;
     z-index: 12;
+    cursor: pointer;
+}
+
+.play_toggle {
+    width: 40px;
 }
