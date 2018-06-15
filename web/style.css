@@ -1,0 +1,61 @@
+html {
+    display: table;
+    margin: auto;
+}
+
+body {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+
+video, canvas {
+    width: 100%;
+    max-height: calc(100% - 8px);
+    position: absolute;
+    top:0;
+    left:0;
+}
+
+canvas{
+    z-index: 10;
+    position: absolute;
+    top:0;
+    left:0;
+}
+
+#resizable {
+    position: relative;
+    width: 900px;
+    height: 500px;
+    border: 1px solid black;
+    resize:both;
+    overflow:auto; /* something other than visible */
+    padding:10px !important;
+}
+
+.hidden{
+    display: none !important;
+}
+
+.hide_until_load {
+    vertical-align: middle;
+    text-align: center;
+    max-width: 1000px;
+    padding-top: 20px;
+}
+
+.slider_wrapper{
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.slider_time_pos{
+    position: absolute;
+    width: 1px;
+    background: red;
+    height: 100%;
+    top: 0;
+    left: 20%;
+    z-index: 12;
+}
