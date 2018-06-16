@@ -5,8 +5,8 @@ let slider = document.getElementById('slider');
 
 let video_size = {'w': 0, 'h': 0};
 let filename = 'in.mp4';
-let time_start = 10;
-let time_end = 12;
+let time_start = 0;
+let time_end = 1;
 let crop = [null, null];
 
 
@@ -171,8 +171,8 @@ function update(){
 	// noinspection JSCheckFunctionSignatures
 	ctx.drawImage(video, 0, 0, canvas.width, canvas.height); //TODO: Subimage using crop.
 
-	let ts = (time_start?time_start.toFixed(4):0);
-	let te = (time_end?time_end.toFixed(4):0);
+	let ts = (time_start?time_start.toFixed(2):0);
+	let te = (time_end?time_end.toFixed(2):0);
 	let mpeg = 'ffmpeg -ss '+ts+' -i '+filename+' -movflags faststart -t '+(te-ts).toFixed(4)+' ';
 	if(crop[0] && crop[1]){
 		let rect = canvas.getBoundingClientRect();
