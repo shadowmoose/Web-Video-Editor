@@ -86,4 +86,5 @@ input[type=checkbox]{
     background: black;
     color: white;
     cursor: text;
+    max-width:900px;
 }
