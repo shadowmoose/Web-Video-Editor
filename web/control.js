@@ -173,7 +173,7 @@ function update(){
 
 	let ts = (time_start?time_start.toFixed(4):0);
 	let te = (time_end?time_end.toFixed(4):0);
-	let mpeg = 'ffmpeg -ss '+ts+' -i '+filename+' -t '+(te-ts).toFixed(4)+' ';
+	let mpeg = 'ffmpeg -ss '+ts+' -i '+filename+' -movflags faststart -t '+(te-ts).toFixed(4)+' ';
 	if(crop[0] && crop[1]){
 		let rect = canvas.getBoundingClientRect();
 		let box = crop_box(crop, rect.width, rect.height);
