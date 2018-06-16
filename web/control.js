@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 let slider = document.getElementById('slider');
 
 let video_size = {'w': 0, 'h': 0};
-let loaded = false;
+let filename = 'in.mp4';
 let time_start = 10;
 let time_end = 12;
 let crop = [null, null];
@@ -16,6 +16,7 @@ $(function() {
 	$("#video_selector").change(function (e) {
 		let fileInput = e.target;
 		let fileUrl = window.URL.createObjectURL(fileInput.files[0]);
+		filename = fileInput.files[0].name;
 		$(".video").attr("src", fileUrl);
 		e.target.remove();
 	});
@@ -26,7 +27,6 @@ $(function() {
 
 	$(".video").bind("loadedmetadata", function (e) {
 		video_size = {'w': this.videoWidth, 'h': this.videoHeight};
-		loaded = true;
 		$('.hide_until_load').removeClass('hidden');
 		noUiSlider.create(slider, {
 			start: [0, this.duration],
@@ -41,6 +41,7 @@ $(function() {
 		});
 		update_slider_fields();
 	}).bind('loadeddata', function(e) {
+		// noinspection JSIgnoredPromiseFromCall
 		e.target.play();  // start playing
 	}).on('pause', (e)=>{
 		console.log('Paused: ', e.target.currentTime)
@@ -172,7 +173,7 @@ function update(){
 
 	let ts = (time_start?time_start.toFixed(4):0);
 	let te = (time_end?time_end.toFixed(4):0);
-	let mpeg = 'ffmpeg -ss '+ts+' -i in.mp4 -t '+(te-ts).toFixed(4)+' ';
+	let mpeg = 'ffmpeg -ss '+ts+' -i '+filename+' -t '+(te-ts).toFixed(4)+' ';
 	if(crop[0] && crop[1]){
 		let rect = canvas.getBoundingClientRect();
 		let box = crop_box(crop, rect.width, rect.height);
