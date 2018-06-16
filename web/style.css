@@ -25,6 +25,16 @@ canvas{
     border: 0;
 }
 
+label {
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+input[type=checkbox]{
+    vertical-align: middle;
+    cursor: pointer;
+}
+
 #resizable {
     position: relative;
     width: 900px;
@@ -64,4 +74,16 @@ canvas{
 
 .play_toggle {
     width: 40px;
+}
+
+.ffmpeg {
+    vertical-align: middle;
+    text-align: center;
+    font-family: monospace;
+    padding: 6px;
+    margin-top: 20px;
+    border: 1px dashed gray;
+    background: black;
+    color: white;
+    cursor: text;
 }

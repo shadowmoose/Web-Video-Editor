@@ -20,6 +20,10 @@ $(function() {
 		e.target.remove();
 	});
 
+	$("#mute_toggle").click(function (){
+		$(video).prop('muted', !$(video).prop('muted'));
+	});
+
 	$(".video").bind("loadedmetadata", function (e) {
 		video_size = {'w': this.videoWidth, 'h': this.videoHeight};
 		loaded = true;
@@ -87,7 +91,7 @@ $(function() {
 		}
 		document.onmousemove = (e)=>{mmov(e, ele)};
 		document.onmouseup = (e)=>{mup(e, ele)};
-	})
+	});
 });
 
 
@@ -95,10 +99,11 @@ function update_slider_fields(range){
 	if(!range || range.length < 2)
 		return;
 	document.querySelectorAll('.slider_control').forEach(function(input) {
+		// noinspection JSUndefinedPropertyAssignment
 		input.value = range[input.dataset.pos];
 	});
-	time_start = range[0];
-	time_end = range[1];
+	time_start = parseFloat(range[0]);
+	time_end = parseFloat(range[1]);
 }
 
 function set_slider(){
@@ -126,11 +131,25 @@ function unscale(coords, rect){
 	}
 }
 
+function crop_box(crop, in_width, in_height){
+	let rect = {'width': in_width, 'height': in_height};
+	let p1 = unscale(crop[0], rect), p2 = unscale(crop[1],rect);
+	let x = Math.min(p1.x, p2.x);
+	let y = Math.min(p1.y, p2.y);
+	let w = Math.abs(p1.x - p2.x);
+	let h = Math.abs(p1.y - p2.y);
+	return {
+		'x': Math.floor(x),
+		'y': Math.floor(y),
+		'w': Math.floor(w),
+		'h': Math.floor(h)
+	}
+}
+
 function pause_toggle(){
 	console.log('toggle play');
 	if(video.paused){
-		video.play();
-		$(".play_toggle").html('&#10074;&#10074;')
+		video.play().finally(()=>{$(".play_toggle").html('&#10074;&#10074;')});
 	}else{
 		video.pause();
 		$(".play_toggle").html('&#9654;')
@@ -151,18 +170,21 @@ function update(){
 	// noinspection JSCheckFunctionSignatures
 	ctx.drawImage(video, 0, 0, canvas.width, canvas.height); //TODO: Subimage using crop.
 
-
+	let ts = (time_start?time_start.toFixed(4):0);
+	let te = (time_end?time_end.toFixed(4):0);
+	let mpeg = 'ffmpeg -ss '+ts+' -i in.mp4 -t '+(te-ts).toFixed(4)+' ';
 	if(crop[0] && crop[1]){
 		let rect = canvas.getBoundingClientRect();
-		let p1 = unscale(crop[0], rect), p2 = unscale(crop[1],rect);
-		let x = Math.min(p1.x, p2.x);
-		let y = Math.min(p1.y, p2.y);
-		let w = Math.abs(p1.x - p2.x);
-		let h = Math.abs(p1.y - p2.y);
+		let box = crop_box(crop, rect.width, rect.height);
 		ctx.strokeStyle="#FF0000";
-		ctx.strokeRect(x, y, w, h);
+		ctx.strokeRect(box.x, box.y, box.w, box.h);
+		box = crop_box(crop, video_size.w, video_size.h);
+		mpeg+= '-filter:v "crop='+box.w+':'+box.h+':'+box.x+':'+box.y+'" ';
 	}
-
+	mpeg+='-c:a copy out.mp4';
+	if($('.ffmpeg').text() !== mpeg) {
+		$('.ffmpeg').text(mpeg);
+	}
 	requestAnimationFrame(update.bind(this)); // Tell browser to trigger this method again, next animation frame.
 }
 

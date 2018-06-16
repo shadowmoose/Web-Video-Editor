@@ -30,6 +30,11 @@
 	Start: <input type="number" class="slider_control" data-pos="0" value="0" title="Start" />
 	End: <input type="number" class="slider_control" data-pos="1" value="1" title="End" />
 	<button class='play_toggle' onClick="pause_toggle()">&#10074;&#10074;</button>
+	<label for="mute_toggle">Mute:</label><input type="checkbox" id="mute_toggle" checked />
+</div>
+
+<div class="ffmpeg">
+	ffmpeg -i in.mp4 -filter:v "crop=80:60:200:100" -c:a copy out.mp4
 </div>
 
 <script src="./control.js"></script>
