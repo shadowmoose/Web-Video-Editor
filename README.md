@@ -6,5 +6,5 @@ https://shadowmoose.github.io/Web-Video-Editor/web/
 
 Load a video, adjust the time, and click+drag on the screen to crop into a rectangle.
 
-This wab page (optionally) supports loading a Javascript-compiled version of FFmpeg, 
+The web page (optionally) supports loading a Javascript-compiled version of FFmpeg, 
 which can encode small jobs within the browser.
