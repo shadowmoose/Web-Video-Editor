@@ -8,15 +8,20 @@ let filename = 'in.mp4';
 let time_start = 0;
 let time_end = 1;
 let crop = [null, null];
-
+let ffmpeg = null;
+let selected_file = null;
 
 $(function() {
 	console.log('Loaded DOM.');
+	ffmpeg = new FFMPEG(document.querySelector(".download_links"));
+
+	console.log(ffmpeg);
 
 	$("#video_selector").change(function (e) {
 		let fileInput = e.target;
 		let fileUrl = window.URL.createObjectURL(fileInput.files[0]);
 		filename = fileInput.files[0].name;
+		selected_file = fileInput.files[0];
 		$(".video").attr("src", fileUrl);
 		e.target.remove();
 	});
@@ -93,6 +98,23 @@ $(function() {
 		document.onmousemove = (e)=>{mmov(e, ele)};
 		document.onmouseup = (e)=>{mup(e, ele)};
 	});
+
+	$("#run_ffmpeg").click(() => {
+		let cmd = build_ffmpeg_string(true);
+		let ts = (time_start?time_start.toFixed(2):0);
+		let te = (time_end?time_end.toFixed(2):0);
+		let duration = te - ts;
+		let progress_callback = (prog) => {
+			if(prog.done){
+				document.querySelector(".ffmpeg_log").textContent = "Conversion complete.";
+			}else {
+				let percent = (prog['time'] / duration) * 100;
+				document.querySelector(".ffmpeg_log").textContent = percent.toFixed(2) + "% complete.";
+			}
+		};
+		console.log('Running FFMPEG:', cmd);
+		ffmpeg.start(selected_file, cmd, progress_callback);
+	});
 });
 
 
@@ -157,6 +179,32 @@ function pause_toggle(){
 	}
 }
 
+function build_ffmpeg_string(for_browser_run=false){
+	let ts = (time_start?time_start.toFixed(2):0);
+	let te = (time_end?time_end.toFixed(2):0);
+	let mpeg = for_browser_run?'': 'ffmpeg ';
+	mpeg+= '-ss '+ts+' -i "'+filename+'"';
+	if(for_browser_run && (!crop[0] || !crop[1])){
+		mpeg+=' -vf showinfo'
+	}
+	mpeg+=' -movflags faststart -t '+(te-ts).toFixed(4)+' ';
+	if(crop[0] && crop[1]){
+		let rect = canvas.getBoundingClientRect();
+		let box = crop_box(crop, rect.width, rect.height);
+		ctx.strokeStyle="#FF0000";
+		ctx.strokeRect(box.x, box.y, box.w, box.h);
+		box = crop_box(crop, video_size.w, video_size.h);
+		mpeg+= '-filter:v "crop='+box.w+':'+box.h+':'+box.x+':'+box.y;
+		if(for_browser_run){
+			mpeg+=', showinfo';
+		}
+		mpeg+= '" ';
+	}
+	let fn = for_browser_run ? encodeURI(filename.replace(/\.[^/.]+$/, "")) : 'out';
+	mpeg+='-c:a copy '+fn+'.mp4';
+	return mpeg;
+}
+
 function update(){
 	canvas.width = $(video).width();
 	canvas.height = $(video).height();
@@ -171,18 +219,7 @@ function update(){
 	// noinspection JSCheckFunctionSignatures
 	ctx.drawImage(video, 0, 0, canvas.width, canvas.height); //TODO: Subimage using crop.
 
-	let ts = (time_start?time_start.toFixed(2):0);
-	let te = (time_end?time_end.toFixed(2):0);
-	let mpeg = 'ffmpeg -ss '+ts+' -i "'+filename+'" -movflags faststart -t '+(te-ts).toFixed(4)+' ';
-	if(crop[0] && crop[1]){
-		let rect = canvas.getBoundingClientRect();
-		let box = crop_box(crop, rect.width, rect.height);
-		ctx.strokeStyle="#FF0000";
-		ctx.strokeRect(box.x, box.y, box.w, box.h);
-		box = crop_box(crop, video_size.w, video_size.h);
-		mpeg+= '-filter:v "crop='+box.w+':'+box.h+':'+box.x+':'+box.y+'" ';
-	}
-	mpeg+='-c:a copy out.mp4';
+	let mpeg = build_ffmpeg_string(false);
 	if($('.ffmpeg').text() !== mpeg) {
 		$('.ffmpeg').text(mpeg);
 	}

@@ -88,3 +88,15 @@ input[type=checkbox]{
     cursor: text;
     max-width:900px;
 }
+
+.ffmpeg_log {
+    font-family: monospace;
+    white-space: pre;
+    max-height: 100px;
+    max-width: 900px;
+    overflow-y: auto;
+}
+
+.download_links a{
+    display: block;
+}
