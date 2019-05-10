@@ -51,6 +51,7 @@ class FFMPEG {
 					"data": this.videoData
 				}]
 			});
+			this.videoData = null;
 		}else{
 			alert("Not ready to run FFmpeg - is it already running or loading? Try refreshing.");
 		}

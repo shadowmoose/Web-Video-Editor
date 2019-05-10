@@ -10,12 +10,15 @@ let time_end = 1;
 let crop = [null, null];
 let ffmpeg = null;
 let selected_file = null;
+let heap_limit = null;
 
 $(function() {
 	console.log('Loaded DOM.');
 	ffmpeg = new FFMPEG(document.querySelector(".download_links"));
-
-	console.log(ffmpeg);
+	try{
+		heap_limit = performance.memory.jsHeapSizeLimit;
+		console.debug("Heap limit found:", heap_limit)
+	}catch{}
 
 	$("#video_selector").change(function (e) {
 		let fileInput = e.target;
@@ -100,6 +103,13 @@ $(function() {
 	});
 
 	$("#run_ffmpeg").click(() => {
+		if(heap_limit){
+			if(selected_file.size * 2.5 > (heap_limit - performance.memory.usedJSHeapSize)){
+				if(!confirm("The given file is likely to crash your browser!\nContinue?")){
+					return
+				}
+			}
+		}
 		let cmd = build_ffmpeg_string(true);
 		let ts = (time_start?time_start.toFixed(2):0);
 		let te = (time_end?time_end.toFixed(2):0);
