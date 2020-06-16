@@ -210,8 +210,8 @@ function build_ffmpeg_string(for_browser_run=false){
 		}
 		mpeg+= '" ';
 	}
-	let fn = for_browser_run ? encodeURI(filename.replace(/\.[^/.]+$/, "")) : 'out';
-	mpeg+='-c:a copy '+fn+'.mp4';
+	let fn = for_browser_run ? encodeURI(filename.replace(/\.[^/.]+$/, "")) : filename;
+	mpeg+=`-c:a copy "edit - ${fn}"`;
 	return mpeg;
 }
 
