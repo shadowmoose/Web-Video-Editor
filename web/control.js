@@ -8,17 +8,10 @@ let filename = 'in.mp4';
 let time_start = 0;
 let time_end = 1;
 let crop = [null, null];
-let ffmpeg = null;
 let selected_file = null;
-let heap_limit = null;
 
-$(function() {
+$(() => {
 	console.log('Loaded DOM.');
-	ffmpeg = new FFMPEG(document.querySelector(".download_links"));
-	try{
-		heap_limit = performance.memory.jsHeapSizeLimit;
-		console.debug("Heap limit found:", heap_limit)
-	}catch{}
 
 	$("#video_selector").change(function (e) {
 		let fileInput = e.target;
@@ -101,30 +94,56 @@ $(function() {
 		document.onmousemove = (e)=>{mmov(e, ele)};
 		document.onmouseup = (e)=>{mup(e, ele)};
 	});
+});
 
-	$("#run_ffmpeg").click(() => {
+$("#run_ffmpeg").click(async () => {
+	try{
+		const heap_limit = performance.memory.jsHeapSizeLimit;
 		if(heap_limit){
 			if(selected_file.size * 2.5 > (heap_limit - performance.memory.usedJSHeapSize)){
-				if(!confirm("The given file is likely to crash your browser!\nContinue?")){
+				if(!confirm("The given file is so large, it is likely to crash your browser!\n\nContinue?")){
 					return
 				}
 			}
 		}
-		let cmd = build_ffmpeg_string(true);
-		let ts = (time_start?time_start.toFixed(2):0);
-		let te = (time_end?time_end.toFixed(2):0);
-		let duration = te - ts;
-		let progress_callback = (prog) => {
-			if(prog.done){
-				document.querySelector(".ffmpeg_log").textContent = "Conversion complete.";
-			}else {
-				let percent = (prog['time'] / duration) * 100;
-				document.querySelector(".ffmpeg_log").textContent = percent.toFixed(2) + "% complete.";
-			}
-		};
-		console.log('Running FFMPEG:', cmd);
-		ffmpeg.start(selected_file, cmd, progress_callback);
+	}catch{}
+
+	const cmd = build_ffmpeg_string(true);
+	const { createFFmpeg, fetchFile } = FFmpeg;
+	const message = document.querySelector(".ffmpeg_log");
+	const ffmpeg = createFFmpeg({
+		log: true,
+		progress: ({ ratio }) => {
+			message.innerHTML = `Transcoding Video: ${(ratio * 100.0).toFixed(2)}%`;
+			document.title = message.innerHTML;
+		},
 	});
+
+	try {
+		document.querySelector(".download_links").innerHTML = '';
+		const {name} = selected_file;
+		message.innerHTML = 'Loading ffmpeg-core.js';
+		await ffmpeg.load();
+		message.innerHTML = 'Start transcoding';
+		ffmpeg.FS('writeFile', name, await fetchFile(selected_file));
+		await ffmpeg.run(...cmd);// '-i', name,  'output.mp4');
+		message.innerHTML = 'Complete transcoding';
+		document.title = message.innerHTML;
+		const data = ffmpeg.FS('readFile', 'output.mp4');
+
+		let a = document.createElement('a');
+		let fn = decodeURI(name);
+		a.download = fn;
+		let blob = new Blob([data.buffer], {type: 'video/mp4'});
+		a.href = window.URL.createObjectURL(blob);
+		a.textContent = 'Click here to download [' + fn + "]!";
+
+		document.querySelector(".download_links").append(a);
+		a.click();
+	} catch (err) {
+		console.error(err);
+		message.innerHTML = 'Error processing input file. It may be too large for the browser to manage.';
+	}
 });
 
 
@@ -189,30 +208,35 @@ function pause_toggle(){
 	}
 }
 
+async function copyText() {
+	await navigator.permissions.query({name: "clipboard-write"});
+
+	await navigator.clipboard.writeText($('.ffmpeg').text()).then(() => {
+		console.log('Copied to clipboard.');
+	}).catch(console.error)
+}
+
 function build_ffmpeg_string(for_browser_run=false){
 	let ts = (time_start?time_start.toFixed(2):0);
 	let te = (time_end?time_end.toFixed(2):0);
-	let mpeg = for_browser_run?'': 'ffmpeg ';
-	mpeg+= '-ss '+ts+' -i "'+filename+'"';
-	if(for_browser_run && (!crop[0] || !crop[1])){
-		mpeg+=' -vf showinfo'
+	let args = [
+		'-i', `${for_browser_run ? filename : '"' + filename + '"'}`,
+		'-movflags', 'faststart',
+		'-t', (te-ts).toFixed(4)
+	];
+	if (ts) {
+		args.unshift('-ss', ts);
 	}
-	mpeg+=' -movflags faststart -t '+(te-ts).toFixed(4)+' ';
 	if(crop[0] && crop[1]){
-		let rect = canvas.getBoundingClientRect();
-		let box = crop_box(crop, rect.width, rect.height);
-		ctx.strokeStyle="#FF0000";
-		ctx.strokeRect(box.x, box.y, box.w, box.h);
-		box = crop_box(crop, video_size.w, video_size.h);
-		mpeg+= '-filter:v "crop='+box.w+':'+box.h+':'+box.x+':'+box.y;
-		if(for_browser_run){
-			mpeg+=', showinfo';
-		}
-		mpeg+= '" ';
+		let box = crop_box(crop, video_size.w, video_size.h);
+		let crp = `"crop=${box.w}:${box.h}:${box.x}:${box.y}"`;
+		if (for_browser_run) crp = crp.replace(/"/g, '');
+		args.push('-filter:v', crp);
 	}
-	let fn = for_browser_run ? encodeURI(filename.replace(/\.[^/.]+$/, ""))+'.mp4' : `"edit - ${filename}"`;
-	mpeg+=`-c:a copy ${fn}`;
-	return mpeg;
+	let fn = for_browser_run ? 'output.mp4' : `"edit - ${filename}"`;
+	args.push('-c:a', 'copy');
+	args.push(fn);
+	return for_browser_run ? args : args.join(' ');
 }
 
 function update(){
@@ -229,7 +253,14 @@ function update(){
 	// noinspection JSCheckFunctionSignatures
 	ctx.drawImage(video, 0, 0, canvas.width, canvas.height); //TODO: Subimage using crop.
 
-	let mpeg = build_ffmpeg_string(false);
+	if(crop[0] && crop[1]){
+		let rect = canvas.getBoundingClientRect();
+		let box = crop_box(crop, rect.width, rect.height);
+		ctx.strokeStyle="#FF0000";
+		ctx.strokeRect(box.x, box.y, box.w, box.h);
+	}
+
+	let mpeg = 'ffmpeg ' + build_ffmpeg_string(false);
 	if($('.ffmpeg').text() !== mpeg) {
 		$('.ffmpeg').text(mpeg);
 	}

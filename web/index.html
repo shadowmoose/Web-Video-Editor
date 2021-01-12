@@ -32,7 +32,7 @@
 	<button class='play_toggle' onClick="pause_toggle()">&#10074;&#10074;</button>
 	<label for="mute_toggle">Mute:</label><input type="checkbox" id="mute_toggle" checked />
 
-	<div class="ffmpeg">
+	<div class="ffmpeg" onclick="copyText()" title="Click here to copy to clipboard.">
 		ffmpeg -i in.mp4 -filter:v "crop=80:60:200:100" -c:a copy out.mp4
 	</div>
 
@@ -49,6 +49,6 @@
 </div>
 
 <script src="./control.js"></script>
-<script src="ffmpeg/ffmpeg_runner.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.9.5/dist/ffmpeg.min.js"></script>
 </body>
 </html>

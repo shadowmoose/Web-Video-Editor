@@ -6,6 +6,7 @@ html {
 body {
     display: table-cell;
     vertical-align: middle;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 
@@ -52,7 +53,6 @@ input[type=checkbox]{
 .hide_until_load {
     vertical-align: middle;
     text-align: center;
-    max-width: 1000px;
     padding-top: 20px;
 }
 
@@ -85,7 +85,7 @@ input[type=checkbox]{
     border: 1px dashed gray;
     background: black;
     color: white;
-    cursor: text;
+    cursor: pointer;
     max-width:900px;
 }
 
