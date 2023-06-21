@@ -75,24 +75,22 @@ $(() => {
 		console.log(crop);
 	});
 
-	$('.slider_time_pos').mousedown((e)=>{
-		let ele = e.target;
-		let last_pos = e.clientX;
-		function mup(e, ele){
-			console.log('up');
+	$('.slider_time_pos').on('mousedown', function(e) {
+		document.onselectstart = function() {return false};
+		let parentrect = e.target.parentElement.getBoundingClientRect();
+		function mup(){
 			document.onmousemove = null;
 			document.onmouseup = null;
+			document.onselectstart = function() {return true};
 		}
-		function mmov(e, ele){
-			let delta = e.clientX - last_pos;
-			console.log('Delta:', delta);
-			last_pos = e.clientX;
-			let total_percent = (ele.offsetLeft+delta)/ele.parentElement.offsetWidth;
-			console.log(total_percent);
+		function mmov(e){
+			let percent = (e.clientX-parentrect.x) / (parentrect.width);
+			// prevents the time_pos from resetting to 0 after sliding off past 100%
+			let total_percent = percent > 1 ? .999999 : percent;
 			video.currentTime = video.duration * total_percent
 		}
-		document.onmousemove = (e)=>{mmov(e, ele)};
-		document.onmouseup = (e)=>{mup(e, ele)};
+		document.onmousemove = function(e) {mmov(e)};
+		document.onmouseup = function() {mup()};
 	});
 });
 
